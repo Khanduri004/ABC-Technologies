@@ -1,0 +1,6 @@
+{
+  "jenkins.pipeline.linter.connector.url": "http://54.72.74.192:8080/pipeline-model-converter/validate",
+  "jenkins.pipeline.linter.connector.user": "ABC_Employee_1",
+  "jenkins.pipeline.linter.connector.pass": "11f95565b9557e701c1afc4ac4e0d538d7",
+  "jenkins.pipeline.linter.connector.allowUnauthorizedCerts": true
+}

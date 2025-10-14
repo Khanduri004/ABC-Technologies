@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+
+    stages {
+        stage ('Clean Workspace') {
+            steps {
+                clean_ws()
+            }
+        }
+
+        stage('Clone Repository') {
+            steps{
+                clone ("https://github.com/Khanduri004/ABC-Technologies.git","master")
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps{
+                docker build -t abc_technologies:latest .
+            }
+        }
+
+        stage('Run Docker Container'){
+            steps{
+                docker run -d -p 8080:8080 --name abc_technologies_container abc_technologies:latest 
+            }
+        }
+
+        stage('Run unit tests'){
+            steps{
+                sh 'docker exec abc_technologies_container mvn test'
+                sh 'mvn test'                
+            }
+        }
+
+        stage('Code Coverage Report"'){
+            steps{
+                sh 'docker exec abc_technologies_container mvn jacoco:report'
+                sh 'mvn jacoco:report'
+
+                publishHTML (target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: "Code Coverage Report"
+                ])}
+        }
+
+        stage('Push Docker Image to Docker Hub'){
+            steps{
+                docker push 'shreya004/abc_technologies:latest'
+            }
+        }
+
+         stage('Update Kubernetes Manifests')
+            steps{
+                will do later
+            }
+    }
