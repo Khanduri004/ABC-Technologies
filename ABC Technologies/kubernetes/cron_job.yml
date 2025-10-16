@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: abc-technologies-cronjob
+  namespace: abc-technologies
+spec:
+  schedule: "0 0 * * *" # every day at midnight
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: busybox
+            command:
+              - /bin/sh
+              - -c
+              - "cp -r /data/* /backup/"
+            volumeMounts:
+              - name: java-webapp-storage
+                mountPath: /data
+              - name: backup-storage
+                mountPath: /backup
+          restartPolicy: OnFailure
+          volumes:
+            - name: java-webapp-storage
+              persistentVolumeClaim:
+                claimName: abc-technologies-pvc
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: abc-technologies-pvc
