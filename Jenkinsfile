@@ -49,25 +49,7 @@ pipeline {
                 }
             }
         }
-         stage('Run Tests with Coverage') {
-            steps {
-              sh 'mvn clean test jacoco:report'
-            }
-         }
-
-        stage('Code Coverage Report') {
-            steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'target/site/jacoco',
-                    reportFiles: 'index.html',
-                    reportName: 'Code Coverage Report'
-                ])
-            }
-        }
-
+    
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
@@ -103,6 +85,7 @@ pipeline {
         }
     }
 }
+
 
 
 
