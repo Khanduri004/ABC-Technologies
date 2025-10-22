@@ -36,6 +36,11 @@ pipeline {
                 }
             }
         }
+         stage('Run Tests with Coverage') {
+            steps {
+              sh 'mvn clean test jacoco:report'
+            }
+         }
 
         stage('Code Coverage Report') {
             steps {
@@ -85,4 +90,5 @@ pipeline {
         }
     }
 }
+
 
