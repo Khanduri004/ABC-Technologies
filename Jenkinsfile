@@ -19,7 +19,20 @@ pipeline {
                 git branch: 'main', url: "${GIT_URL}"
             }
         }
-
+        
+        stage('Code Coverage Report') {
+            steps {
+              sh 'mvn clean test jacoco:report'
+              publishHTML(target: [
+              allowMissing: true,
+              alwaysLinkToLastBuild: true,
+              keepAll: true,
+              reportDir: 'target/site/jacoco',
+              reportFiles: 'index.html',
+              reportName: 'Code Coverage Report'])
+            }
+         }
+        
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE .'
@@ -90,5 +103,6 @@ pipeline {
         }
     }
 }
+
 
 
