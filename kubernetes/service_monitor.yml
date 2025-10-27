@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: abc-technologies-monitor
+  namespace: prometheus-monitoring   # where Prometheus is running
+  labels:
+    release: kube-prometheus-stack   # must match your Helm release name
+spec:
+  selector:
+    matchLabels:
+      app: abc-technologies          # label from your Service
+  namespaceSelector:
+    matchNames:
+      - abc-technologies                   # namespace where your app is running
+  endpoints:
+    - port: http                     # must match the port name in your Service
+      path: /metrics                 # endpoint your app exposes metrics on
+      interval: 15s

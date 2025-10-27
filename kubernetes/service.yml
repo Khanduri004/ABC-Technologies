@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: abc-technologies
+  namespace: abc-techno
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080  # nodePort should be >30000
+  selector:
+    app: abc-technologies
