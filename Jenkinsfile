@@ -75,10 +75,12 @@ pipeline {
 
         always {
             cleanWs()
-        }
-    }  
-}    
+         }
+      }  
+     
+    }
 
+}
 
 
 
