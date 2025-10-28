@@ -19,23 +19,25 @@ pipeline {
                 git branch: 'main', url: "${GIT_URL}"
             }
         }
-        
+
         stage('Code Coverage Report') {
             steps {
-              sh 'mvn clean test jacoco:report'
-              publishHTML(target: [
-              allowMissing: true,
-              alwaysLinkToLastBuild: true,
-              keepAll: true,
-              reportDir: 'target/site/jacoco',
-              reportFiles: 'index.html',
-              reportName: 'Code Coverage Report'])
+                sh 'mvn clean test jacoco:report'
+                publishHTML(target: [
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: 'Code Coverage Report'
+                ])
             }
-         }
-        
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE .'
+            }
         }
 
         stage('Push Docker Image to Docker Hub') {
@@ -48,15 +50,15 @@ pipeline {
                 }
             }
         }
-    
+
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl set image deployment/abc-technologies abc-technologies=${DOCKERHUB_REPO}:latest -n abc-technologies'     
-               }
+                sh 'kubectl set image deployment/abc-technologies abc-technologies=$DOCKER_IMAGE -n abc-technologies'
             }
         }
-    
-     post {
+    }
+
+    post {
         success {
             emailext(
                 subject: "✅ SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
@@ -75,13 +77,6 @@ pipeline {
 
         always {
             cleanWs()
-         }
-      }  
-     
+        }
     }
-
 }
-
-
-
-
