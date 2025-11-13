@@ -47,6 +47,8 @@ pipeline {
         stage('Push Docker Image to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+
+                    sh 'docker --version'
                     sh '''
                         docker --version
                         echo "Logging in to Docker Hub..."
