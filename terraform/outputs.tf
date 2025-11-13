@@ -29,17 +29,10 @@ output "eks_node_group_public_ips" {
   value       = module.eks.cluster_security_group_id
 }
 
-output "eks_hybrid_asg_id" {
-  description = "Auto Scaling Group ID for hybrid EKS nodes"
-  value       = aws_autoscaling_group.eks_hybrid_asg.id
+output "public_subnet_ids" {
+  value = aws_subnet.public[*].id
 }
 
-output "eks_hybrid_launch_template_id" {
-  description = "Launch Template ID for hybrid EKS nodes"
-  value       = aws_launch_template.eks_hybrid.id
-}
-
-output "eks_hybrid_sg_id" {
-  description = "Security Group ID for hybrid EKS nodes"
-  value       = aws_security_group.eks_hybrid_nodes_sg.id
+output "private_subnet_ids" {
+  value = aws_subnet.private[*].id
 }
