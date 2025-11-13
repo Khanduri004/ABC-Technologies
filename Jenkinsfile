@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    tools {
+        maven 'maven3'
+        jdk 'JDK17'
+    }
 
     environment {
         DOCKER_IMAGE = "shreya004/abc_technologies:latest"
@@ -44,6 +48,8 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh '''
+                        echo "User = $DOCKERHUB_USER"
+                        echo "Pass length = ${#DOCKERHUB_PASS}"
                         echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
                         docker push $DOCKER_IMAGE
                     '''
