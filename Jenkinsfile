@@ -48,6 +48,8 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh '''
+                        docker --version
+                        echo "Logging in to Docker Hub..."
                         echo "DOCKERHUB_USER: $DOCKERHUB_USER"
                         echo "DOCKERHUB_PASS length: ${#DOCKERHUB_PASS}"
                         echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
