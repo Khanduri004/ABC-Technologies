@@ -51,10 +51,10 @@ pipeline {
 
                      sh 'docker --version'
                      sh 'docker --version'
-                     sh 'echo 'Logging in to Docker Hub'
-                     sh 'echo  DOCKERHUB_USER: $DOCKERHUB_USER'
-                     sh 'echo  DOCKERHUB_PASS length: \${#DOCKERHUB_PASS}'
-                     sh 'echo  $DOCKERHUB_PASS" | docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
+                     sh ' echo "Logging in to Docker Hub"'
+                     sh 'echo "DOCKERHUB_USER: $DOCKERHUB_USER"'
+                     sh 'echo "DOCKERHUB_PASS length: \${#DOCKERHUB_PASS}"'
+                     sh 'docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
                      sh 'docker push $DOCKER_IMAGE'
                     
                 }
