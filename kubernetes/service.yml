@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: abc-technologies
-  namespace: abc-techno
+  namespace: abc-technologies
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8080"
