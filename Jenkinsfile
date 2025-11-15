@@ -54,7 +54,7 @@ pipeline {
                      sh ' echo "Logging in to Docker Hub"'
                      sh 'echo "DOCKERHUB_USER: $DOCKERHUB_USER"'
                      sh 'echo "DOCKERHUB_PASS length: \${#DOCKERHUB_PASS}"'
-                     sh 'docker login -u "$DOCKERHUB_USER" --password-stdin
+                     sh 'docker login -u "$DOCKERHUB_USER" --password-stdin'
                      sh 'docker push $DOCKER_IMAGE'
                     
                 }
