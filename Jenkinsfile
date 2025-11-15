@@ -122,9 +122,3 @@ pipeline {
         }
     }
 }      
-
-always {
-            cleanWs()
-        }
-    }
-   } 
