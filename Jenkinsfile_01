@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE = "shreya004/abc_technologies"
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        K8S_NAMESPACE = "abc-technologies"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', 
+                                                     usernameVariable: 'DOCKER_USER', 
+                                                     passwordVariable: 'DOCKER_PASS')]) {
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                            docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                            echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                            docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            docker push ${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to EKS') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        export AWS_DEFAULT_REGION=eu-west-1
+                        
+                        aws eks update-kubeconfig --name my-cluster --region eu-west-1
+                        
+                        kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
+                        
+                        sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${DOCKER_TAG}|g' kubernetes/deployment.yml
+                        
+                        kubectl apply -f kubernetes/namespace.yml || true
+                        kubectl apply -f kubernetes/persistent_volume.yml
+                        kubectl apply -f kubernetes/persistent_volume_claim.yml
+                        kubectl apply -f kubernetes/deployment.yml
+                        kubectl apply -f kubernetes/service.yml
+                        kubectl apply -f kubernetes/hpa.yml
+                        kubectl apply -f kubernetes/ingress.yml
+                        kubectl apply -f kubernetes/cron_job.yml
+                        kubectl apply -f kubernetes/service_monitor.yml || echo "ServiceMonitor skipped"
+                        
+                        kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE}
+                        
+                        kubectl get pods -n ${K8S_NAMESPACE}
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "SUCCESS: Pipeline completed successfully!"
+            echo "Application deployed with image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+        }
+        failure {
+            echo "FAILED: Pipeline failed. Please check the logs."
+        }
+    }
+}
