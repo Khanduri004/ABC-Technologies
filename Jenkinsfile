@@ -105,11 +105,15 @@ pipeline {
            emailext (
             subject: "✅ SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
             body: """
-                <p>Deployment successful!</p>
-                <p>Job: ${env.JOB_NAME}</p>
-                <p>Build Number: ${env.BUILD_NUMBER}</p>
-                <p>Docker Image: ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
-                <p>Check console output at: ${env.BUILD_URL}</p>
+                <html>
+                <body>
+                  <p>Deployment successful!</p>
+                  <p>Job: ${env.JOB_NAME}</p>
+                  <p>Build Number: ${env.BUILD_NUMBER}</p>
+                  <p>Docker Image: ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
+                  <p>Check console output at: ${env.BUILD_URL}</p>
+               </body>
+               </html>
              """,
              to: 'your-email@example.com',
              mimeType: 'text/html'
@@ -120,10 +124,14 @@ pipeline {
         emailext (
             subject: "❌ FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
             body: """
+                <html>
+                <body>   
                 <p>Deployment failed!</p>
                 <p>Job: ${env.JOB_NAME}</p>
                 <p>Build Number: ${env.BUILD_NUMBER}</p>
                 <p>Check console output at: ${env.BUILD_URL}</p>
+            </body>
+            </html>
             """,
             to: 'your-email@example.com',
             mimeType: 'text/html'
