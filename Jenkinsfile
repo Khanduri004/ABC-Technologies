@@ -126,10 +126,10 @@ pipeline {
             body: """
                 <html>
                 <body>   
-                <p>Deployment failed!</p>
-                <p>Job: ${env.JOB_NAME}</p>
-                <p>Build Number: ${env.BUILD_NUMBER}</p>
-                <p>Check console output at: ${env.BUILD_URL}</p>
+                 <p>Deployment failed!</p>
+                 <p>Job: ${env.JOB_NAME}</p>
+                 <p>Build Number: ${env.BUILD_NUMBER}</p>
+                 <p>Check console output at: ${env.BUILD_URL}</p>
             </body>
             </html>
             """,
