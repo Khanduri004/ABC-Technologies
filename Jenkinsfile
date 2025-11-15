@@ -8,6 +8,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "shreya004/abc_technologies:latest"
         GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git"
+        K8S_NAMESPACE = "abc-technologies"
     }
 
     stages {
@@ -62,7 +63,25 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl set image deployment/abc-technologies abc-technologies=$DOCKER_IMAGE -n abc-technologies'
+                sh """
+                    # Update kubeconfig
+                    aws eks update-kubeconfig --name my-cluster --region eu-west-1
+                    
+                    # Create namespace if doesn't exist
+                    kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
+                    
+                    # Update image in deployment
+                    sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}|g' kubernetes/deployment.yml
+                    
+                    # Apply all manifests
+                    kubectl apply -f kubernetes/
+                    
+                    # Wait for rollout
+                    kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE}
+                    
+                    # Show status
+                    kubectl get pods -n ${K8S_NAMESPACE}
+                """
             }
         }
     }
