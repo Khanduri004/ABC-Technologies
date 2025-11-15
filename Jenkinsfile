@@ -44,22 +44,15 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image to Docker Hub') {
-            steps {
-                script{
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-
-                     sh 'docker --version'
-                     sh 'docker --version'
-                     sh ' echo "Logging in to Docker Hub"'
-                     sh 'echo "DOCKERHUB_USER: $DOCKERHUB_USER"'
-                     sh 'echo "DOCKERHUB_PASS length: \${#DOCKERHUB_PASS}"'
-                     sh 'docker login -u "$DOCKERHUB_USER" --password-stdin'
-                     sh 'docker push $DOCKER_IMAGE'
-                    
-                }
-             }     
-            }
+       stage('Push Docker Image to Docker Hub') {
+          steps {
+            withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+             sh '''
+                echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                docker push $DOCKER_IMAGE
+             '''
+            } 
+          }
         }
 
         stage('Deploy to Kubernetes') {
