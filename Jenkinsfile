@@ -99,31 +99,31 @@ pipeline {
             }
         }
     }
-  post {
-    success {
-        echo "✅ Deployment successful! Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+    post {
+      success {
+        echo "SUCCESS: Pipeline completed successfully!"
+        echo "Application deployed with image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
         script {
             emailext (
                 subject: "SUCCESS: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                body: """<html><body><p>Deployment successful!</p><p>Job: ${env.JOB_NAME}</p><p>Build Number: ${env.BUILD_NUMBER}</p><p>Docker Image: ${DOCKER_IMAGE}:${DOCKER_TAG}</p><p>Check console output at: ${env.BUILD_URL}</p></body></html>""",
-                to: 'your-email@example.com',
-                mimeType: 'text/html'
+                body: "Deployment successful!\n\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nImage: ${DOCKER_IMAGE}:${DOCKER_TAG}\n\nConsole: ${env.BUILD_URL}",
+                to: 'your-email@example.com'
             )
         }
-    }
+     }
     failure {
-        echo "❌ Deployment failed!"
+        echo "FAILED: Pipeline failed. Please check the logs."
         script {
             emailext (
                 subject: "FAILED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                body: """<html><body><p>Deployment failed!</p><p>Job: ${env.JOB_NAME}</p><p>Build Number: ${env.BUILD_NUMBER}</p><p>Check console output at: ${env.BUILD_URL}</p></body></html>""",
-                to: 'your-email@example.com',
-                mimeType: 'text/html'
+                body: "Deployment failed!\n\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\n\nConsole: ${env.BUILD_URL}",
+                to: 'your-email@example.com'
             )
         }
     }
-}
-        always {
+}      
+
+always {
             cleanWs()
         }
     }
