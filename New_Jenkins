@@ -108,4 +108,3 @@ pipeline {
             echo "FAILED: Pipeline failed. Please check the logs."
         }
     }
-}
