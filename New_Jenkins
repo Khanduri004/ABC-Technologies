@@ -95,7 +95,6 @@ pipeline {
                         kubectl get pods -n ${K8S_NAMESPACE}
                     """
                 }
-                """
             }
         }
     }
