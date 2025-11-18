@@ -84,7 +84,16 @@ pipeline {
                         kubectl apply -f kubernetes/hpa.yml
                         kubectl apply -f kubernetes/ingress.yml
                         kubectl apply -f kubernetes/cron_job.yml
+                        echo "installing helm......."
+                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                        helm repo update
                         
+                        helm install monitoring prometheus-community/kube-prometheus-stack \
+                        --namespace prometheus-monitoring \
+                        --create-namespace
+                        echo "confirm installation..."
+                        kubectl get crds | grep monitor
+
                         # Try to apply service monitor (skip if Prometheus not installed)
                         kubectl apply -f kubernetes/service_monitor.yml || echo "⚠️  ServiceMonitor skipped (Prometheus Operator not installed)"
                         
