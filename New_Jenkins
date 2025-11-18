@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "shreya004/abc_technologies:latest"
-        GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git" ,credentialsId: 'github-token'
+        GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git" ,credentialsId: 'github-credentials'
         K8S_NAMESPACE = "abc-technologies"
     }
 
