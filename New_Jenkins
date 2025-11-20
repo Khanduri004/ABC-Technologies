@@ -99,7 +99,6 @@ pipeline {
                   --namespace ${PROM_NS} \
                   --set grafana.adminPassword='admin123' \
                   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-                  --timeout 10m --wait
 
                echo "✅ Prometheus & Grafana installation completed."
           """
