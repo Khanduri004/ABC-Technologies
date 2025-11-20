@@ -9,6 +9,7 @@ pipeline {
         DOCKER_IMAGE = "shreya004/abc_technologies:latest"
         GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git"
         K8S_NAMESPACE = "abc-technologies"
+        PROM_NS = "prometheus-monitoring"
     }
 
     stages {
@@ -59,7 +60,45 @@ pipeline {
             """
         }
     }
-}
+  }
+        stage('Install Prometheus & Grafana') {
+           steps {
+             sh """
+               # Update kubeconfig
+               aws eks update-kubeconfig --name my-cluster --region eu-west-1
+
+               echo "🔍 Checking if Prometheus namespace exists..."
+               kubectl get namespace ${PROM_NS} || kubectl create namespace ${PROM_NS}
+
+               echo "🧹 Removing previous failed Prometheus installation..."
+               helm uninstall monitoring -n ${PROM_NS} || true
+
+               echo "🧹 Deleting leftover CRDs..."
+                kubectl delete crd alertmanagerconfigs.monitoring.coreos.com \
+                  alertmanagers.monitoring.coreos.com \
+                  prometheusrules.monitoring.coreos.com \
+                  prometheuses.monitoring.coreos.com \
+                  scrapeconfigs.monitoring.coreos.com \
+                  prometheusagents.monitoring.coreos.com \
+                  --ignore-not-found
+
+                sleep 5
+
+               echo "📦 Adding Helm repo..."
+               helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+               helm repo update
+
+               echo "🚀 Installing kube-prometheus-stack..."
+               helm install monitoring prometheus-community/kube-prometheus-stack \
+                  --namespace ${PROM_NS} \
+                  --set grafana.adminPassword='admin123' \
+                  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+                  --timeout 10m --wait
+
+               echo "✅ Prometheus & Grafana installation completed."
+          """
+       }
+    }
 
         stage('Deploy to Kubernetes') {
             steps {
