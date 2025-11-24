@@ -25,7 +25,7 @@ spec:
           volumes:
             - name: java-webapp-storage
               persistentVolumeClaim:
-                claimName: abc-technologies-pvc
+                claimName: efs-pvc
             - name: backup-storage
               persistentVolumeClaim:
-                claimName: abc-technologies-pvc
+                claimName: efs-pvc
