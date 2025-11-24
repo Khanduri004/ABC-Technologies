@@ -66,44 +66,7 @@ pipeline {
             """
         }
     }
-  }
-        stage('Install Prometheus & Grafana') {
-           steps {
-             sh """
-               # Update kubeconfig
-               aws eks update-kubeconfig --name my-cluster --region eu-west-1
-
-               echo "🔍 Checking if Prometheus namespace exists..."
-               kubectl get namespace ${PROM_NS} || kubectl create namespace ${PROM_NS}
-
-               echo "🧹 Removing previous failed Prometheus installation..."
-               helm uninstall monitoring -n ${PROM_NS} || true
-
-               echo "🧹 Deleting leftover CRDs..."
-                kubectl delete crd alertmanagerconfigs.monitoring.coreos.com \
-                  alertmanagers.monitoring.coreos.com \
-                  prometheusrules.monitoring.coreos.com \
-                  prometheuses.monitoring.coreos.com \
-                  scrapeconfigs.monitoring.coreos.com \
-                  prometheusagents.monitoring.coreos.com \
-                  --ignore-not-found
-
-                sleep 5
-
-               echo "📦 Adding Helm repo..."
-               helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
-               helm repo update
-
-               echo "🚀 Installing kube-prometheus-stack..."
-               helm install monitoring prometheus-community/kube-prometheus-stack \
-                  --namespace ${PROM_NS} \
-                  --set grafana.adminPassword='admin123' \
-                  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-
-               echo "✅ Prometheus & Grafana installation completed."
-          """
-       }
-    }
+  }     
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -112,40 +75,40 @@ pipeline {
                     aws eks update-kubeconfig --name my-cluster --region eu-west-1
                     
                        # Create namespace if doesn't exist
-                        kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
+                       # kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
                         
                         # Update image in deployment
-                        sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}|g' kubernetes/deployment.yml
+                        # sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}|g' kubernetes/deployment.yml
                         
                         # Apply manifests in correct order
                         echo "📦 Applying Kubernetes manifests..."
                         
-                        kubectl apply -f kubernetes/namespace.yml || true
-                        kubectl apply -f kubernetes/persistent_volume.yml
-                        kubectl apply -f kubernetes/persistent_volume_claim.yml
+                        # kubectl apply -f kubernetes/namespace.yml || true
+                        # kubectl apply -f kubernetes/persistent_volume.yml
+                        # kubectl apply -f kubernetes/persistent_volume_claim.yml
                         kubectl apply -f kubernetes/deployment.yml
-                        kubectl apply -f kubernetes/service.yml
-                        kubectl apply -f kubernetes/hpa.yml
-                        kubectl apply -f kubernetes/ingress.yml
+                        # kubectl apply -f kubernetes/service.yml
+                        # kubectl apply -f kubernetes/hpa.yml
+                        # kubectl apply -f kubernetes/ingress.yml
                         kubectl apply -f kubernetes/cron_job.yml
                         echo "installing helm......."
-                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                        helm repo update
+                        #helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                        #helm repo update
                         
-                        helm install monitoring prometheus-community/kube-prometheus-stack \
-                        --namespace prometheus-monitoring \
-                        --create-namespace
-                        echo "confirm installation..."
-                        kubectl get crds | grep monitor
+                        # helm install monitoring prometheus-community/kube-prometheus-stack \
+                        # --namespace prometheus-monitoring \
+                        # --create-namespace
+                        # echo "confirm installation..."
+                        # kubectl get crds | grep monitor
 
                         # Try to apply service monitor (skip if Prometheus not installed)
-                        kubectl apply -f kubernetes/service_monitor.yml || echo "⚠️  ServiceMonitor skipped (Prometheus Operator not installed)"
+                        # kubectl apply -f kubernetes/service_monitor.yml || echo "⚠️  ServiceMonitor skipped (Prometheus Operator not installed)"
                         
                         # Wait for rollout
-                        kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE}
+                        # kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE}
                         
                         # Show status
-                        kubectl get pods -n ${K8S_NAMESPACE}
+                        # kubectl get pods -n ${K8S_NAMESPACE}
                     """
                 }
             }
