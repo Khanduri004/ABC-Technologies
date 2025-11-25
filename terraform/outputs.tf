@@ -16,18 +16,18 @@ output "ec2_instance_id" {
   value = aws_instance.ci_server.id
 }
 
-output "eks_cluster_name" {
-  value = module.eks.cluster_name
-}
+#output "eks_cluster_name" {
+#  value = module.eks.cluster_name
+#}
 
-output "eks_cluster_endpoint" {
-  value = module.eks.cluster_endpoint
-}
+#output "eks_cluster_endpoint" {
+#  value = module.eks.cluster_endpoint
+#}
 
-output "eks_node_group_public_ips" {
-  description = "Public IPs of the EKS node group instances"
-  value       = module.eks.cluster_security_group_id
-}
+#output "eks_node_group_public_ips" {
+#  description = "Public IPs of the EKS node group instances"
+#  value       = module.eks.cluster_security_group_id
+#}
 
 output "public_subnet_ids" {
   value = aws_subnet.public[*].id

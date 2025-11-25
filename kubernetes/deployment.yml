@@ -20,7 +20,7 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
-            - mountPath: /app/data
+            - mountPath: /app/data 
               name: storage
           resources:
             requests:
@@ -50,4 +50,4 @@ spec:
       volumes:
         - name: storage
           persistentVolumeClaim:
-            claimName: efs-pvc
+            claimName: abc-technologies-pvc

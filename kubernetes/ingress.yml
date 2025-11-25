@@ -13,6 +13,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: abc-frontend-service
+            name: abc-technologies
             port:
               number: 80

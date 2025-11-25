@@ -9,4 +9,4 @@ spec:
         - ReadWriteOnce
     persistentVolumeReclaimPolicy: Retain
     hostPath:
-      path: /mnt/data/java-webapp #create this path on host
+      path: /mnt/data/java-webapp #create this path on your nodes
