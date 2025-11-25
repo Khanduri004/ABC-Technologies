@@ -45,6 +45,12 @@ pipeline {
                 ])
             }
         }
+        
+        stage('Build with Maven') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
@@ -66,61 +72,172 @@ pipeline {
             """
         }
     }
-  }     
-
-        stage('Deploy to Kubernetes') {
+  }  
+        stage('Install Prometheus (One-time)') {
             steps {
-                sh """
-                    # Update kubeconfig
-                    aws eks update-kubeconfig --name my-cluster --region eu-west-1
-                    
-                       # Create namespace if doesn't exist
-                       # kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
+                script {
+                    sh """
+                        echo "=========================================="
+                        echo "CHECKING PROMETHEUS INSTALLATION"
+                        echo "=========================================="
                         
-                        # Update image in deployment
-                        # sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}|g' kubernetes/deployment.yml
+                        # Check if Prometheus is already installed
+                        if helm list -n ${PROM_NS} | grep -q kube-prometheus-stack; then
+                            echo "✓ Prometheus already installed, skipping..."
+                        else
+                            echo "Installing Prometheus..."
+                            
+                            # Add Helm repo
+                            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                            helm repo update
+                            
+                            # Create namespace
+                            kubectl create namespace ${PROM_NS} --dry-run=client -o yaml | kubectl apply -f -
+                            
+                            # Install Prometheus stack
+                            helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+                                --namespace ${PROM_NS} \
+                                --set prometheus.service.type=NodePort \
+                                --set prometheus.service.nodePort=30832 \
+                                --set grafana.service.type=NodePort \
+                                --set grafana.service.nodePort=30081 \
+                                --set grafana.adminPassword=admin123 \
+                                --set alertmanager.service.type=NodePort \
+                                --set alertmanager.service.nodePort=30082 \
+                                --wait --timeout=10m
+                            
+                            echo "✓ Prometheus installed successfully"
+                        fi
                         
-                        # Apply manifests in correct order
-                        echo "📦 Applying Kubernetes manifests..."
-                        
-                        # kubectl apply -f kubernetes/namespace.yml || true
-                        # kubectl apply -f kubernetes/persistent_volume.yml
-                        # kubectl apply -f kubernetes/persistent_volume_claim.yml
-                        kubectl apply -f kubernetes/deployment.yml
-                        # kubectl apply -f kubernetes/service.yml
-                        # kubectl apply -f kubernetes/hpa.yml
-                        # kubectl apply -f kubernetes/ingress.yml
-                        kubectl apply -f kubernetes/cron_job.yml
-                        echo "installing helm......."
-                        #helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                        #helm repo update
-                        
-                        # helm install monitoring prometheus-community/kube-prometheus-stack \
-                        # --namespace prometheus-monitoring \
-                        # --create-namespace
-                        # echo "confirm installation..."
-                        # kubectl get crds | grep monitor
-
-                        # Try to apply service monitor (skip if Prometheus not installed)
-                        # kubectl apply -f kubernetes/service_monitor.yml || echo "⚠️  ServiceMonitor skipped (Prometheus Operator not installed)"
-                        
-                        # Wait for rollout
-                        # kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE}
-                        
-                        # Show status
-                        # kubectl get pods -n ${K8S_NAMESPACE}
+                        # Verify installation
+                        echo ""
+                        echo "Prometheus pods:"
+                        kubectl get pods -n ${PROM_NS}
                     """
                 }
+            }
+        }
+
+        stage('Deploy Application to K8s') {
+            steps {
+                sh """
+                    echo "=========================================="
+                    echo "DEPLOYING APPLICATION"
+                    echo "=========================================="
+                    
+                    # Step 1: Create namespace
+                    echo "1. Creating namespace..."
+                    kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                    
+                    # Step 2: Apply PVC (if using persistent storage)
+                    echo "2. Applying PVC..."
+                    kubectl apply -f kubernetes/pvc.yaml || echo "⚠ PVC file not found, skipping..."
+                    
+                    # Step 3: Apply Service (before Deployment)
+                    echo "3. Applying Service..."
+                    kubectl apply -f kubernetes/service.yaml
+                    
+                    # Step 4: Apply Deployment
+                    echo "4. Applying Deployment..."
+                    kubectl apply -f kubernetes/deployment.yaml
+                    
+                    # Step 5: Apply CronJob
+                    echo "5. Applying CronJob..."
+                    kubectl apply -f kubernetes/cronjob.yaml
+                    
+                    # Step 6: Apply HPA (if exists)
+                    echo "6. Applying HPA..."
+                    kubectl apply -f kubernetes/hpa.yaml || echo "⚠ HPA file not found, skipping..."
+                    
+                    # Step 7: Apply Ingress (if exists)
+                    echo "7. Applying Ingress..."
+                    kubectl apply -f kubernetes/ingress.yaml || echo "⚠ Ingress file not found, skipping..."
+                    
+                    echo ""
+                    echo "Waiting for deployment rollout..."
+                    kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE} --timeout=300s
+                """
+            }
+        }
+
+        stage('Apply ServiceMonitor') {
+            steps {
+                sh """
+                    echo "=========================================="
+                    echo "CONFIGURING PROMETHEUS MONITORING"
+                    echo "=========================================="
+                    
+                    # Apply ServiceMonitor (depends on Prometheus)
+                    echo "Applying ServiceMonitor..."
+                    kubectl apply -f kubernetes/service_monitor.yaml
+                    
+                    # Verify ServiceMonitor
+                    kubectl get servicemonitor -n ${PROM_NS}
+                    
+                    echo "✓ ServiceMonitor applied"
+                """
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh """
+                    echo "=========================================="
+                    echo "DEPLOYMENT VERIFICATION"
+                    echo "=========================================="
+                    
+                    echo "Application Pods:"
+                    kubectl get pods -n ${K8S_NAMESPACE}
+                    
+                    echo ""
+                    echo "Services:"
+                    kubectl get svc -n ${K8S_NAMESPACE}
+                    
+                    echo ""
+                    echo "PVC Status:"
+                    kubectl get pvc -n ${K8S_NAMESPACE} || echo "No PVC"
+                    
+                    echo ""
+                    echo "CronJobs:"
+                    kubectl get cronjobs -n ${K8S_NAMESPACE}
+                    
+                    echo ""
+                    echo "=========================================="
+                    echo "ACCESS URLS"
+                    echo "=========================================="
+                    NODE_IP=\$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+                    echo "Application:  http://\$NODE_IP:30080"
+                    echo "Prometheus:   http://\$NODE_IP:30832"
+                    echo "Grafana:      http://\$NODE_IP:30081 (admin/admin123)"
+                    echo "AlertManager: http://\$NODE_IP:30082"
+                    echo "=========================================="
+                """
             }
         }
     }
     
     post {
         success {
-            echo "SUCCESS: Pipeline completed successfully!"
-            echo "Application deployed with image: ${DOCKER_IMAGE}"
+            echo "=========================================="
+            echo "✓ PIPELINE COMPLETED SUCCESSFULLY"
+            echo "=========================================="
+            echo "Image: ${DOCKER_IMAGE}"
+            echo "Namespace: ${K8S_NAMESPACE}"
+            echo ""
+            echo "Next steps:"
+            echo "1. Access your app at NodePort 30080"
+            echo "2. Check Prometheus targets at :30832/targets"
+            echo "3. View Grafana dashboards at :30081"
         }
         failure {
-            echo "FAILED: Pipeline failed. Please check the logs."
+            echo "=========================================="
+            echo "✗ PIPELINE FAILED"
+            echo "=========================================="
+            echo "Check the logs above for errors"
+        }
+        always {
+            echo "Pipeline execution completed at: ${new Date()}"
         }
     }
+}
+
