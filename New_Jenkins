@@ -79,12 +79,12 @@ pipeline {
                     sh """
 
                         # Configure AWS credentials
-                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY 
-                        aws configure set default.region eu-west-1
+                        # aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                        # aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY 
+                        # aws configure set default.region eu-west-1
 
                        # Update kubeconfig so kubectl can talk to EKS
-                        aws eks update-kubeconfig --name my-cluster --region eu-west-1
+                       # aws eks update-kubeconfig --name my-cluster --region eu-west-1
                         echo "=========================================="
                         echo "CHECKING PROMETHEUS INSTALLATION"
                         echo "=========================================="
