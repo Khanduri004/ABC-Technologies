@@ -74,54 +74,52 @@ pipeline {
     }
   }  
         stage('Install Prometheus (One-time)') {
-            steps {
-                script {
-                    sh """
-
-                        # Configure AWS credentials
-                        # aws configure set aws_access_key_id 
-                        # aws configure set aws_secret_access_key  
-                        # aws configure set default.region eu-west-1
-
-                       # Update kubeconfig so kubectl can talk to EKS
-                       # aws eks update-kubeconfig --name my-cluster --region eu-west-1
-                        echo "=========================================="
-                        echo "CHECKING PROMETHEUS INSTALLATION"
-                        echo "=========================================="
-                        
-                        # Check if Prometheus is already installed
-                        if helm list -n ${PROM_NS} | grep -q kube-prometheus-stack; then
-                            echo "✓ Prometheus already installed, skipping..."
-                        else
-                            echo "Installing Prometheus..."
-                            
-                            # Add Helm repo
-                            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                            helm repo update
-                            
-                            # Create namespace
-                            kubectl create namespace ${PROM_NS} --dry-run=client -o yaml | kubectl apply -f -
-                            
-                            # Install Prometheus stack
-                            helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-                                --namespace ${PROM_NS} \
-                                --set prometheus.service.type=NodePort \
-                                --set prometheus.service.nodePort=30832 \
-                                --set grafana.service.type=NodePort \
-                                --set grafana.service.nodePort=30081 \
-                                --set grafana.adminPassword=admin123 \
-                                --set alertmanager.service.type=NodePort \
-                                --set alertmanager.service.nodePort=30082 \
-                                --wait --timeout=10m
-                            
-                            echo "✓ Prometheus installed successfully"
-                        fi
-                        
-                        # Verify installation
-                        echo ""
-                        echo "Prometheus pods:"
-                        kubectl get pods -n ${PROM_NS}
-                    """
+         steps {
+           script {
+                sh """
+                  # Configure AWS region
+                  export AWS_DEFAULT_REGION=eu-west-1
+                
+                  # Update kubeconfig - IAM role handles authentication automatically
+                  aws eks update-kubeconfig --name my-cluster --region eu-west-1
+                
+                  echo "=========================================="
+                  echo "CHECKING PROMETHEUS INSTALLATION"
+                  echo "=========================================="
+                
+                  # Check if Prometheus is already installed
+                  if helm list -n ${PROM_NS} | grep -q kube-prometheus-stack; then
+                     echo "✓ Prometheus already installed, skipping..."
+                  else
+                     echo "Installing Prometheus..."
+                    
+                     # Add Helm repo
+                     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                     helm repo update
+                    
+                     # Create namespace
+                     kubectl create namespace ${PROM_NS} --dry-run=client -o yaml | kubectl apply -f -
+                    
+                     # Install Prometheus stack
+                     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+                        --namespace ${PROM_NS} \
+                        --set prometheus.service.type=NodePort \
+                        --set prometheus.service.nodePort=30832 \
+                        --set grafana.service.type=NodePort \
+                        --set grafana.service.nodePort=30081 \
+                        --set grafana.adminPassword=admin123 \
+                        --set alertmanager.service.type=NodePort \
+                        --set alertmanager.service.nodePort=30082 \
+                        --wait --timeout=10m
+                    
+                     echo "✓ Prometheus installed successfully"
+                    fi
+                
+                  # Verify installation
+                  echo ""
+                  echo "Prometheus pods:"
+                  kubectl get pods -n ${PROM_NS}
+                 """
                 }
             }
         }
