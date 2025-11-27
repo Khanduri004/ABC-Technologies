@@ -8,5 +8,6 @@ spec:
     accessModes:
         - ReadWriteOnce
     persistentVolumeReclaimPolicy: Retain
+    storageClassName: ""
     hostPath:
       path: /mnt/data/java-webapp #create this path on your nodes
