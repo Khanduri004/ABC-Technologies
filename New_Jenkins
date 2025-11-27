@@ -73,125 +73,43 @@ pipeline {
         }
     }
   }  
-        stage('Install Prometheus (One-time)') {
-         steps {
-           script {
-                sh """
-                 
-                  
-                  # Update kubeconfig - IAM role handles authentication automatically
-                  # aws eks update-kubeconfig --name my-cluster --region eu-west-1
-                
-                  echo "=========================================="
-                  echo "CHECKING PROMETHEUS INSTALLATION"
-                  echo "=========================================="
-                
-                  # Check if Prometheus is already installed
-                  if helm list -n ${PROM_NS} | grep -q kube-prometheus-stack; then
-                     echo "✓ Prometheus already installed, skipping..."
-                  else
-                     echo "Installing Prometheus..."
-                    
-                     # Add Helm repo
-                     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                     helm repo update
-                    
-                     # Create namespace
-                     kubectl create namespace ${PROM_NS} --dry-run=client -o yaml | kubectl apply -f -
-                    
-                     # Install Prometheus stack
-                     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-                        --namespace ${PROM_NS} \
-                        --set prometheus.service.type=NodePort \
-                        --set prometheus.service.nodePort=30832 \
-                        --set grafana.service.type=NodePort \
-                        --set grafana.service.nodePort=30081 \
-                        --set grafana.adminPassword=admin123 \
-                        --set alertmanager.service.type=NodePort \
-                        --set alertmanager.service.nodePort=30082 \
-                        --wait --timeout=10m
-                    
-                     echo "✓ Prometheus installed successfully"
-                    fi
-                
-                  # Verify installation
-                  echo ""
-                  echo "Prometheus pods:"
-                  kubectl get pods -n ${PROM_NS}
-                 """
-                }
-            }
-        }
-
-        stage('Deploy Application to K8s') {
-            steps {
+             stage('Deploy Application') {
+              steps {
                 sh """
                     echo "=========================================="
                     echo "DEPLOYING APPLICATION"
                     echo "=========================================="
                     
-                    # Step 1: Create namespace
-                    echo "1. Creating namespace..."
+                    # Create namespace if doesn't exist
                     kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
                     
-                    # Step 2: Apply PVC (if using persistent storage)
-                    echo "2. Applying PVC..."
-                    kubectl apply -f kubernetes/pvc.yaml || echo "⚠ PVC file not found, skipping..."
-                    
-                    # Step 3: Apply Service (before Deployment)
-                    echo "3. Applying Service..."
+                    # Apply Kubernetes manifests
+                    echo "Applying Kubernetes resources..."
                     kubectl apply -f kubernetes/service.yaml
-                    
-                    # Step 4: Apply Deployment
-                    echo "4. Applying Deployment..."
                     kubectl apply -f kubernetes/deployment.yaml
-                    
-                    # Step 5: Apply CronJob
-                    echo "5. Applying CronJob..."
                     kubectl apply -f kubernetes/cronjob.yaml
                     
-                    # Step 6: Apply HPA (if exists)
-                    echo "6. Applying HPA..."
-                    kubectl apply -f kubernetes/hpa.yaml || echo "⚠ HPA file not found, skipping..."
+                    # Optional files
+                    kubectl apply -f kubernetes/pvc.yaml 2>/dev/null || echo "⚠ No PVC file"
+                    kubectl apply -f kubernetes/hpa.yaml 2>/dev/null || echo "⚠ No HPA file"
+                    kubectl apply -f kubernetes/ingress.yaml 2>/dev/null || echo "⚠ No Ingress file"
                     
-                    # Step 7: Apply Ingress (if exists)
-                    echo "7. Applying Ingress..."
-                    kubectl apply -f kubernetes/ingress.yaml || echo "⚠ Ingress file not found, skipping..."
-                    
+                    # Wait for deployment to be ready
                     echo ""
                     echo "Waiting for deployment rollout..."
                     kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE} --timeout=300s
                 """
             }
         }
-
-        stage('Apply ServiceMonitor') {
-            steps {
-                sh """
-                    echo "=========================================="
-                    echo "CONFIGURING PROMETHEUS MONITORING"
-                    echo "=========================================="
-                    
-                    # Apply ServiceMonitor (depends on Prometheus)
-                    echo "Applying ServiceMonitor..."
-                    kubectl apply -f kubernetes/service_monitor.yaml
-                    
-                    # Verify ServiceMonitor
-                    kubectl get servicemonitor -n ${PROM_NS}
-                    
-                    echo "✓ ServiceMonitor applied"
-                """
-            }
-        }
-
+        
         stage('Verify Deployment') {
             steps {
                 sh """
                     echo "=========================================="
-                    echo "DEPLOYMENT VERIFICATION"
+                    echo "DEPLOYMENT STATUS"
                     echo "=========================================="
                     
-                    echo "Application Pods:"
+                    echo "Pods:"
                     kubectl get pods -n ${K8S_NAMESPACE}
                     
                     echo ""
@@ -199,22 +117,15 @@ pipeline {
                     kubectl get svc -n ${K8S_NAMESPACE}
                     
                     echo ""
-                    echo "PVC Status:"
-                    kubectl get pvc -n ${K8S_NAMESPACE} || echo "No PVC"
-                    
-                    echo ""
                     echo "CronJobs:"
                     kubectl get cronjobs -n ${K8S_NAMESPACE}
                     
                     echo ""
                     echo "=========================================="
-                    echo "ACCESS URLS"
+                    echo "ACCESS INFORMATION"
                     echo "=========================================="
                     NODE_IP=\$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-                    echo "Application:  http://\$NODE_IP:30080"
-                    echo "Prometheus:   http://\$NODE_IP:30832"
-                    echo "Grafana:      http://\$NODE_IP:30081 (admin/admin123)"
-                    echo "AlertManager: http://\$NODE_IP:30082"
+                    echo "Application URL: http://\$NODE_IP:30080"
                     echo "=========================================="
                 """
             }
@@ -226,13 +137,7 @@ pipeline {
             echo "=========================================="
             echo "✓ PIPELINE COMPLETED SUCCESSFULLY"
             echo "=========================================="
-            echo "Image: ${DOCKER_IMAGE}"
-            echo "Namespace: ${K8S_NAMESPACE}"
-            echo ""
-            echo "Next steps:"
-            echo "1. Access your app at NodePort 30080"
-            echo "2. Check Prometheus targets at :30832/targets"
-            echo "3. View Grafana dashboards at :30081"
+            echo "Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
         }
         failure {
             echo "=========================================="
@@ -245,4 +150,3 @@ pipeline {
         }
     }
 }
-
