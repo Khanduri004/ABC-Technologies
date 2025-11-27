@@ -85,15 +85,15 @@ pipeline {
                     
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
-                    cd ${WORKSPACE}/kubernetes
-                    kubectl apply -f service.yaml
-                    kubectl apply -f deployment.yaml
-                    kubectl apply -f cronjob.yaml
+                    cd "/var/lib/jenkins/workspace/CI CD Pipeline/kubernetes"
+                    kubectl apply -f service.yml
+                    kubectl apply -f deployment.yml
+                    kubectl apply -f cronjob.yml
                     
                     # Optional files
-                    kubectl apply -f pvc.yaml 2>/dev/null || echo "⚠ No PVC file"
-                    kubectl apply -f hpa.yaml 2>/dev/null || echo "⚠ No HPA file"
-                    kubectl apply -f ingress.yaml 2>/dev/null || echo "⚠ No Ingress file"
+                    kubectl apply -f pvc.yml 2>/dev/null || echo "⚠ No PVC file"
+                    kubectl apply -f hpa.yml 2>/dev/null || echo "⚠ No HPA file"
+                    kubectl apply -f ingress.yml 2>/dev/null || echo "⚠ No Ingress file"
                     
                     # Wait for deployment to be ready
                     echo ""
