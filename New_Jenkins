@@ -85,6 +85,7 @@ pipeline {
                     
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
+                    cd ${WORKSPACE}/kubernetes
                     kubectl apply -f service.yaml
                     kubectl apply -f deployment.yaml
                     kubectl apply -f cronjob.yaml
