@@ -88,10 +88,11 @@ pipeline {
                     cd "/var/lib/jenkins/workspace/CI CD Pipeline/kubernetes"
                     kubectl apply -f service.yml
                     kubectl apply -f deployment.yml
-                    kubectl apply -f cronjob.yml
+                    kubectl apply -f cron_job.yml
                     
                     # Optional files
-                    kubectl apply -f pvc.yml 2>/dev/null || echo "⚠ No PVC file"
+                    kubectl apply -f persistent_volume.yml
+                    kubectl apply -f persistent_volume_claim.yml 2>/dev/null || echo "⚠ No PVC file"
                     kubectl apply -f hpa.yml 2>/dev/null || echo "⚠ No HPA file"
                     kubectl apply -f ingress.yml 2>/dev/null || echo "⚠ No Ingress file"
                     
