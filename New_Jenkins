@@ -77,11 +77,10 @@ pipeline {
          steps {
            script {
                 sh """
-                  # Configure AWS region
-                  export AWS_DEFAULT_REGION=eu-west-1
-                
+                 
+                  
                   # Update kubeconfig - IAM role handles authentication automatically
-                  aws eks update-kubeconfig --name my-cluster --region eu-west-1
+                  # aws eks update-kubeconfig --name my-cluster --region eu-west-1
                 
                   echo "=========================================="
                   echo "CHECKING PROMETHEUS INSTALLATION"
