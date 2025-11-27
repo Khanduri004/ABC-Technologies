@@ -85,14 +85,14 @@ pipeline {
                     
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
-                    kubectl apply -f kubernetes/service.yaml
-                    kubectl apply -f kubernetes/deployment.yaml
-                    kubectl apply -f kubernetes/cronjob.yaml
+                    kubectl apply -f service.yaml
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f cronjob.yaml
                     
                     # Optional files
-                    kubectl apply -f kubernetes/pvc.yaml 2>/dev/null || echo "⚠ No PVC file"
-                    kubectl apply -f kubernetes/hpa.yaml 2>/dev/null || echo "⚠ No HPA file"
-                    kubectl apply -f kubernetes/ingress.yaml 2>/dev/null || echo "⚠ No Ingress file"
+                    kubectl apply -f pvc.yaml 2>/dev/null || echo "⚠ No PVC file"
+                    kubectl apply -f hpa.yaml 2>/dev/null || echo "⚠ No HPA file"
+                    kubectl apply -f ingress.yaml 2>/dev/null || echo "⚠ No Ingress file"
                     
                     # Wait for deployment to be ready
                     echo ""
