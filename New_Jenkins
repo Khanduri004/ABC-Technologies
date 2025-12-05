@@ -9,7 +9,6 @@ pipeline {
         DOCKER_IMAGE = "shreya004/abc_technologies:latest"
         GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git"
         K8S_NAMESPACE = "abc-technologies"
-        PROM_NS = "prometheus-monitoring"
     }
 
     stages {
@@ -88,19 +87,14 @@ pipeline {
                     cd "/var/lib/jenkins/workspace/CI CD Pipeline/kubernetes"
                     kubectl apply -f service.yml
                     kubectl apply -f deployment.yml
-                    kubectl apply -f cron_job.yml
-                    
-                    # Optional files
                     kubectl apply -f persistent_volume.yml
                     kubectl apply -f persistent_volume_claim.yml 2>/dev/null || echo "⚠ No PVC file"
-                    kubectl apply -f hpa.yml 2>/dev/null || echo "⚠ No HPA file"
                     kubectl apply -f ingress.yml 2>/dev/null || echo "⚠ No Ingress file"
-                    
                     # Wait for deployment to be ready
                     echo ""
                     echo "Waiting for deployment rollout..."
                     kubectl rollout status deployment/abc-technologies -n ${K8S_NAMESPACE} --timeout=300s
-                """
+                 """
             }
         }
         
@@ -117,10 +111,6 @@ pipeline {
                     echo ""
                     echo "Services:"
                     kubectl get svc -n ${K8S_NAMESPACE}
-                    
-                    echo ""
-                    echo "CronJobs:"
-                    kubectl get cronjobs -n ${K8S_NAMESPACE}
                     
                     echo ""
                     echo "=========================================="
