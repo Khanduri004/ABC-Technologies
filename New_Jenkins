@@ -29,11 +29,12 @@ pipeline {
                     echo "DEPLOYING APPLICATION"
                     echo "=========================================="
                 
-                    kubectl  apply -f namespace.yml
                     
+
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
                     cd "/var/lib/jenkins/workspace/CI CD Pipeline/kubernetes"
+                    kubectl  apply -f namespace.yml
                     kubectl apply -f service.yml
                     kubectl apply -f deployment.yml
                     kubectl apply -f persistent_volume.yml
