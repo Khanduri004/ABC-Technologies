@@ -5,81 +5,30 @@ pipeline {
         jdk 'JDK17'
     }
 
-    environment {
-        DOCKER_IMAGE = "shreya004/abc_technologies:latest"
-        GIT_URL = "https://github.com/Khanduri004/ABC-Technologies.git"
-        K8S_NAMESPACE = "abc-technologies"
-    }
-
-    stages {
-
-        stage('Clean Workspace') {
+        stages {
+         stage('Compile') {
             steps {
-                cleanWs()
+                build job: 'ABC_Code_Compile', wait: true
             }
-        }
-
-        stage('Clone Repository') {
+          }
+         stage('Test') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: "main"]],
-                    userRemoteConfigs: [[
-                        url: env.GIT_URL,
-                        credentialsId: 'github-credentials'
-                    ]]
-                ])
+                build job: 'ABC_Code_Test', wait: true
             }
-        }
-
-        stage('Code Coverage Report') {
+         }
+         stage('Package') {
             steps {
-                sh 'mvn clean test jacoco:report'
-                publishHTML(target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'target/site/jacoco',
-                    reportFiles: 'index.html',
-                    reportName: 'Code Coverage Report'
-                ])
+                build job: 'ABC_Code_Package', wait: true
             }
-        }
-        
-        stage('Build with Maven') {
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
+         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
-            }
-        }
-
-       stage('Push Docker Image to Docker Hub') {
-          steps {
-             withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-               sh """
-                 docker --version
-                 echo "Logging in to Docker Hub..."
-                 echo "User: $DOCKERHUB_USER"
-
-                 echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-
-                 docker push $DOCKER_IMAGE
-            """
-        }
-    }
-  }  
              stage('Deploy Application') {
               steps {
                 sh """
                     echo "=========================================="
                     echo "DEPLOYING APPLICATION"
                     echo "=========================================="
-                    
-                    # Create namespace if doesn't exist
+                
                     kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
                     
                     # Apply Kubernetes manifests

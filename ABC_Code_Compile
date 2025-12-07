@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+        jdk 'JDK17'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/Khanduri004/ABC-Technologies.git'
+            }
+        }
+        stage('Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Compilation successful!'
+           
+            archiveArtifacts artifacts: 'target/classes/**/*', allowEmptyArchive: true
+        }
+    }
+}

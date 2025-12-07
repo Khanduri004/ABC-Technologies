@@ -1,0 +1,44 @@
+// Job Name: 3-Package-Code
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+        jdk 'JDK17'
+    }
+    environment {
+        DOCKER_IMAGE = "shreya004/abc_technologies:latest"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/Khanduri004/ABC-Technologies.git'
+            }
+        }
+        stage('Package') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+    }
+}
