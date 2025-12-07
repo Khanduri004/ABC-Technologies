@@ -3,7 +3,9 @@ pipeline {
     tools {
         maven 'maven3'
         jdk 'JDK17'
-    }
+    } 
+     environment {
+       K8S_NAMESPACE = 'abc-technologies'                }
 
         stages {
          stage('Compile') {
@@ -25,16 +27,19 @@ pipeline {
              stage('Deploy Application') {
               steps {
                 sh """
+                    set -e
+                    export K8S_NAMESPACE="${env.K8S_NAMESPACE}"
                     echo "=========================================="
-                    echo "DEPLOYING APPLICATION"
+                    echo "DEPLOYING APPLICATION in : \$K8S_NAMESPACE"
                     echo "=========================================="
-                
+                    echo "Applying namespace (if not exists)..."
+                    kubectl apply -f namespace.yml || echo "⚠ failed to apply namespace.yml, continue" 
                     
 
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
                     cd "/var/lib/jenkins/workspace/CI CD Pipeline/kubernetes"
-                    kubectl  apply -f namespace.yml
+                    #kubectl  apply -f namespace.yml
                     kubectl apply -f service.yml
                     kubectl apply -f deployment.yml
                     kubectl apply -f persistent_volume.yml
