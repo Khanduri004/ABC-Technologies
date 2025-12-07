@@ -29,7 +29,7 @@ pipeline {
                     echo "DEPLOYING APPLICATION"
                     echo "=========================================="
                 
-                    kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl create namespace namespace.yml --dry-run=client -o yaml | kubectl apply -f -
                     
                     # Apply Kubernetes manifests
                     echo "Applying Kubernetes resources..."
