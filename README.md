@@ -42,7 +42,19 @@ Provisioned complete AWS infrastructure using **Terraform**
 
 ### 3. CI/CD Pipeline (Jenkins)
 
-Implemented **multi-stage pipeline:**
+Implemented **multi-stage pipeline with 4 jobs**
+1 Test
+<img width="959" height="476" alt="image" src="https://github.com/user-attachments/assets/9926a740-0e41-41ff-978f-f952c85deb0f" />
+
+2 Compile
+<img width="959" height="510" alt="image" src="https://github.com/user-attachments/assets/57f0d0ab-5316-42df-8004-9afa43fd5574" />
+
+3 Package
+<img width="959" height="509" alt="image" src="https://github.com/user-attachments/assets/9c85584d-e9a0-4fd9-8602-33863029cc75" />
+
+4 CI CD
+<img width="959" height="434" alt="image" src="https://github.com/user-attachments/assets/c34e9aa5-2584-4f67-a20e-7046dd441c27" />
+
 
 #### **Stage 1: Code Checkout**
 - Clone repository from GitHub on every push
