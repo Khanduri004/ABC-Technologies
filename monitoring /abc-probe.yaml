@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: abc-app
+  namespace: monitoring
+  labels:
+    release: prometheus        # must match your kube-prometheus-stack release
+spec:
+  interval: 30s
+  module: http_2xx
+  prober:
+    url: blackbox-prometheus-blackbox-exporter.monitoring:9115
+  targets:
+    staticConfig:
+      static:
+        - http://<service-name>.<namespace>.svc.cluster.local:<port>/<path>
