@@ -1,0 +1,62 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: abc-slo-rules
+  namespace: monitoring
+  labels:
+    release: prometheus        # same release label as the probe
+spec:
+  groups:
+  - name: abc.sli
+    interval: 30s
+    rules:
+    # --- Error ratio (1 - availability) over several windows ---
+    - record: abc:sli_error_ratio:5m
+      expr: 1 - avg_over_time(probe_success{job=~"probe/.*abc-app"}[5m])
+    - record: abc:sli_error_ratio:30m
+      expr: 1 - avg_over_time(probe_success{job=~"probe/.*abc-app"}[30m])
+    - record: abc:sli_error_ratio:1h
+      expr: 1 - avg_over_time(probe_success{job=~"probe/.*abc-app"}[1h])
+    - record: abc:sli_error_ratio:6h
+      expr: 1 - avg_over_time(probe_success{job=~"probe/.*abc-app"}[6h])
+    # --- Latency SLI: share of probes faster than 300 ms ---
+    - record: abc:sli_latency_good_ratio:1h
+      expr: avg_over_time((probe_duration_seconds{job=~"probe/.*abc-app"} < bool 0.3)[1h:])
+
+  - name: abc.burnrate
+    interval: 30s
+    rules:
+    # Burn rate = error ratio / error budget (0.005)
+    - record: abc:slo_burn_rate:5m
+      expr: abc:sli_error_ratio:5m / 0.005
+    - record: abc:slo_burn_rate:30m
+      expr: abc:sli_error_ratio:30m / 0.005
+    - record: abc:slo_burn_rate:1h
+      expr: abc:sli_error_ratio:1h / 0.005
+    - record: abc:slo_burn_rate:6h
+      expr: abc:sli_error_ratio:6h / 0.005
+    # Remaining budget over the 30-day window (1 = full, 0 = exhausted)
+    - record: abc:error_budget_remaining:30d
+      expr: 1 - ((1 - avg_over_time(probe_success{job=~"probe/.*abc-app"}[30d])) / 0.005)
+
+  - name: abc.alerts
+    rules:
+    - alert: ABCErrorBudgetFastBurn
+      expr: abc:slo_burn_rate:1h > 14.4 and abc:slo_burn_rate:5m > 14.4
+      for: 2m
+      labels: {severity: page}
+      annotations:
+        summary: "ABC availability burning budget at >14.4x (2% of 30-day budget per hour)"
+        description: "Burn rate {{ $value | printf \"%.1f\" }}. At this pace the budget is gone in about 2 days."
+    - alert: ABCErrorBudgetSlowBurn
+      expr: abc:slo_burn_rate:6h > 6 and abc:slo_burn_rate:30m > 6
+      for: 15m
+      labels: {severity: ticket}
+      annotations:
+        summary: "ABC availability burning budget at >6x (5% of budget over 6h)"
+    - alert: ABCLatencySLOAtRisk
+      expr: abc:sli_latency_good_ratio:1h < 0.95
+      for: 10m
+      labels: {severity: ticket}
+      annotations:
+        summary: "Under 95% of probes completing within 300 ms"
